@@ -15,10 +15,19 @@ typedef enum QueueResult_t {
     QUEUE_ADD_FAILED
 } QueueResult;
 
+ struct Node_t {
+    int connection_descriptor;
+    struct timeval arrival;
+    struct Node_t* next;
+    struct Node_t* prev;
+};
+
 struct Queue_t { 
-   struct Node_t* first;
-   struct Node_t* last;
-   int size;
+    struct Node_t* first;
+    struct Node_t* last;
+    int head;
+    int tail;
+    int size;
 };
 
 typedef enum Overload_t {
