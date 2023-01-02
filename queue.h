@@ -44,6 +44,12 @@ struct Node_t {
     struct Node_t* prev;
 };
 
+struct Queue_t { 
+   struct Node_t* first;
+   struct Node_t* last;
+   int size;
+};
+
 struct WorkerPool_t {
     Queue pending;
     pthread_t* threads;
@@ -56,6 +62,21 @@ struct WorkerPool_t {
     runHandler handler;
     Overload overload_handler;
 };
+
+// Node Functions
+Node NodeCreate(int data, struct timeval* arrival); 
+Node getNodeByIndex(Queue queue, int index);
+// Queue Functions
+Queue QueueCreate();
+void QueueDestroy(Queue queue);
+int QueueGetSize(Queue queue);
+QueueResult QueueAdd (Queue queue,int element, struct timeval* arrival);
+struct timeval QueueRemoveHead (Queue queue, int* head);
+//void QueuePrint(Queue queue);
+
+
+WorkerPool WorkerPoolCreate(int numOfThreads, int max_queue_size, char* sched);
+
 
 QueueResult blockHandler();
 QueueResult dropTailHandler();
