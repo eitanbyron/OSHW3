@@ -22,14 +22,6 @@ typedef enum QueueResult_t {
     struct Node_t* prev;
 };
 
-struct Queue_t { 
-    struct Node_t* first;
-    struct Node_t* last;
-    int head;
-    int tail;
-    int size;
-};
-
 typedef enum Overload_t {
     OVERLOAD_BLOCK,
     OVERLOAD_DROP_TAIL,
@@ -37,12 +29,7 @@ typedef enum Overload_t {
     OVERLOAD_DROP_HEAD
 } Overload;
 
-struct Node_t {
-    int data; 
-    struct timeval arrival;
-    struct Node_t* next;
-    struct Node_t* prev;
-};
+
 
 struct Queue_t { 
    struct Node_t* first;
@@ -80,12 +67,12 @@ int QueueGetSize(Queue queue);
 QueueResult QueueAdd (Queue queue,int element, struct timeval* arrival);
 QueueResult QueueRemoveHead (Queue queue, int* fd, struct timeval* arrival);
 //void QueuePrint(Queue queue);
-
+void QueueDeleteByIndex(Queue queue, int index);
 
 WorkerPool WorkerPoolCreate(int numOfThreads, int max_queue_size, char* sched);
 
 
-QueueResult blockHandler();
-QueueResult dropTailHandler();
-QueueResult dropHeadHandler();
-QueueResult dropRandomHandler();
+QueueResult blockHandler(WorkerPool wp, int element, struct timeval *arrival);
+QueueResult dropTailHandler(int element);
+QueueResult dropHeadHandler(WorkerPool wp, int element, struct timeval *arrival);
+QueueResult dropRandomHandler(WorkerPool wp, int element, struct timeval *arrival);
