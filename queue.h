@@ -5,7 +5,7 @@ typedef struct Queue_t *Queue;
 typedef struct WorkerPool_t *WorkerPool;
 typedef struct pthread_args_t *pthread_args;
 
-typedef void(*runHandler)(int, int*, int*, int*, struct timeval*, struct timeval*, int);
+typedef void(*runHandler)(int, struct timeval*, struct timeval*, int);
 typedef enum QueueResult_t {
     QUEUE_SUCCESS,
     QUEUE_NULL_ARGUMENT,
@@ -50,6 +50,11 @@ struct Queue_t {
    int size;
 };
 
+struct pthreads_args_t {
+    WorkerPool wp;
+    int number_of_thread;
+};
+
 struct WorkerPool_t {
     Queue pending;
     pthread_t* threads;
@@ -57,6 +62,8 @@ struct WorkerPool_t {
     pthread_cond_t queue_full;
     pthread_mutex_t lock_queue;
     int running;
+    int stat_request_handeled;
+    int dyn_requests_hadeled;
     int max_queue_size;
     int numOfThreads;
     runHandler handler;
@@ -71,7 +78,7 @@ Queue QueueCreate();
 void QueueDestroy(Queue queue);
 int QueueGetSize(Queue queue);
 QueueResult QueueAdd (Queue queue,int element, struct timeval* arrival);
-struct timeval QueueRemoveHead (Queue queue, int* head);
+QueueResult QueueRemoveHead (Queue queue, int* fd, struct timeval* arrival);
 //void QueuePrint(Queue queue);
 
 

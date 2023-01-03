@@ -12,24 +12,28 @@
 //
 
 // HW3: Parse the new arguments too
-void getargs(int *port, int argc, char *argv[])
+void getargs(int *port, int argc, char *argv[], int* numofthreads,int* queuesize, char* sched)
 {
     if (argc < 2) {
 	fprintf(stderr, "Usage: %s <port>\n", argv[0]);
 	exit(1);
     }
     *port = atoi(argv[1]);
+    *numofthreads =atoi(argv[2]);
+    *queuesize =atoi(argv[3]);
+    strcpy(sched,argv[4]);
 }
 
 
 int main(int argc, char *argv[])
 {
-    int listenfd, connfd, port, clientlen;
+    int listenfd, connfd, port, clientlen, numofthreads, queuesize;
+    char sched[10];
     struct sockaddr_in clientaddr;
 
-    getargs(&port, argc, argv);
+    getargs(&port, argc, argv, &numofthreads, queuesize, sched);
 
-    // 
+    //
     // HW3: Create some threads...
     //
 
