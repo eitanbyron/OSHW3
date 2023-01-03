@@ -107,9 +107,9 @@ void chooseHandling(WorkerPool wp, char* sched)
     }
 }
 
-void handleWrapper (int fd, struct timeval* arrival, struct timeval* dispatch, int thread_id)
+void handleWrapper (int fd,WorkerPool wp, int thread_id, struct timeval* arrival, struct timeval* dispatch)
 {
-    requestHandle(fd);
+    requestHandle(fd ,&(wp->request_counter),&(wp->static_counter) ,&(wp->dynamic_counter), thread_id, arrival, dispatch);
     close(fd);
 }
 
@@ -121,8 +121,9 @@ WorkerPool PoolCreate (int number_of_threads, int queue_size, char* sched)
     if (!initializer(wp))
         exit(1);
     wp->running =0;
-    wp->stat_request_handeled =0;
-    wp->dyn_requests_hadeled =0;
+    wp->static_counter =0;
+    wp->dynamic_counter =0;
+    wp->request_counter =0;
     wp->numOfThreads = number_of_threads;
     wp->pending = QueueCreate();
     wp->handler = handleWrapper;
@@ -154,7 +155,7 @@ QueueResult WorkerPoolDequeue( WorkerPool wp, int thread_num)
     timersub(&pick,&arrival,&result);
     wp->running++;
     pthread_mutex_unlock(&wp->lock_queue);
-    wp->handler....; //TODO: HANDLER
+    wp->handler(fd, wp, thread_num, &arrival, &result);
     pthread_mutex_lock(&wp->lock_queue);
     wp->running--;
     pthread_cond_broadcast(&wp->queue_full);

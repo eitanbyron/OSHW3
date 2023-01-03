@@ -15,6 +15,7 @@ typedef enum QueueResult_t {
     QUEUE_ADD_FAILED
 } QueueResult;
 
+
  struct Node_t {
     int connection_descriptor;
     struct timeval arrival;
@@ -49,8 +50,9 @@ struct WorkerPool_t {
     pthread_cond_t queue_full;
     pthread_mutex_t lock_queue;
     int running;
-    int stat_request_handeled;
-    int dyn_requests_hadeled;
+    int static_counter;
+    int dynamic_counter;
+    int request_counter;
     int max_queue_size;
     int numOfThreads;
     runHandler handler;
