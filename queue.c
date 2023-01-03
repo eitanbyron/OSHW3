@@ -1,11 +1,14 @@
 #include "queue.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include "segel.h"
-#include "request.h"
-#include <stdbool.h>
-#include <math.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <pthread.h>
+// #include "segel.h"
+// #include "request.h"
+// #include <stdbool.h>
+// #include <math.h>
+
+
+thread_rout rout=&thread_routine;
 
 QueueResult blockHandler(WorkerPool wp, int element, struct timeval *arrival)
 {
@@ -33,7 +36,7 @@ QueueResult dropHeadHandler(WorkerPool wp, int element,  struct timeval *arrival
     //int fd=wp->pending->first->data;
     int fd;
     struct timeval temp;
-    QueueRemoveHead(wp->pending ,&fd ,temp); 
+    QueueRemoveHead(wp->pending ,&fd ,&temp); 
     close(fd);
     QueueResult res=QueueAdd(wp->pending, element, arrival);
     pthread_cond_signal(&wp->queue_empty);
@@ -65,6 +68,15 @@ QueueResult dropRandomHandler(WorkerPool wp, int element,  struct timeval *arriv
     pthread_cond_signal(&wp->queue_empty);
    
     return res;
+}
+
+QueueResult WorkerPoolAddConnection(WorkerPool wp, int fd,struct timeval *arrival)
+{
+    if(wp==NULL)
+    {
+        return QUEUE_NULL_ARGUMENT;
+    }
+    return WorkerPoolEnqueue(wp,fd, arrival);
 }
 
 pthread_args argsCreate(WorkerPool wp, int id)
@@ -113,7 +125,6 @@ void handleWrapper (int fd,WorkerPool wp, int thread_id, struct timeval* arrival
     close(fd);
 }
 
-thread_rout rout =&thread_routine;
 
 WorkerPool PoolCreate (int number_of_threads, int queue_size, char* sched)
 {
@@ -200,7 +211,7 @@ QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arriva
 }
 
 
-void* thread_routine (pthread_args args)
+void* thread_routine(pthread_args args)
 {
     while(true)
     {

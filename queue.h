@@ -1,4 +1,11 @@
 #include <sys/time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include "segel.h"
+#include "request.h"
+#include <stdbool.h>
+#include <math.h>
 
 typedef struct Node_t* Node;
 typedef struct Queue_t *Queue;
@@ -38,7 +45,7 @@ struct Queue_t {
    int size;
 };
 
-struct pthreads_args_t {
+struct pthread_args_t {
     WorkerPool wp;
     int number_of_thread;
 };
@@ -59,6 +66,9 @@ struct WorkerPool_t {
     Overload overload_handler;
 };
 
+WorkerPool WorkerPoolCreate(int numOfThreads, int max_queue_size, char* sched);
+
+
 // Node Functions
 Node NodeCreate(int data, struct timeval* arrival); 
 Node getNodeByIndex(Queue queue, int index);
@@ -70,11 +80,13 @@ QueueResult QueueAdd (Queue queue,int element, struct timeval* arrival);
 QueueResult QueueRemoveHead (Queue queue, int* fd, struct timeval* arrival);
 //void QueuePrint(Queue queue);
 void QueueDeleteByIndex(Queue queue, int index);
-
-WorkerPool WorkerPoolCreate(int numOfThreads, int max_queue_size, char* sched);
-
+QueueResult WorkerPoolAddConnection(WorkerPool wp, int fd,struct timeval *arrival);
+QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arrival);
+QueueResult WorkerPoolDequeue( WorkerPool wp, int thread_num);
 
 QueueResult blockHandler(WorkerPool wp, int element, struct timeval *arrival);
 QueueResult dropTailHandler(int element);
 QueueResult dropHeadHandler(WorkerPool wp, int element, struct timeval *arrival);
 QueueResult dropRandomHandler(WorkerPool wp, int element, struct timeval *arrival);
+void* thread_routine(pthread_args args);
+typedef void*(*thread_rout)(void*);

@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     char sched[10];
     struct sockaddr_in clientaddr;
 
-    getargs(&port, argc, argv, &numofthreads, queuesize, sched);
+    getargs(&port, argc, argv, &numofthreads, &queuesize, sched);
 
     //
     // HW3: Create some threads...
