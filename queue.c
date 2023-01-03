@@ -9,7 +9,7 @@
 
 QueueResult blockHandler(WorkerPool wp, int element, struct timeval *arrival)
 {
-    while(getNumAvailableBuffers(wp)==0)
+    while(wp->running+QueueGetSize(wp->pending)==wp->max_queue_size)
     {
         pthread_cond_wait(&wp->queue_full, &wp->lock_queue);
     }
@@ -25,13 +25,15 @@ QueueResult dropTailHandler(int element)
 }
 QueueResult dropHeadHandler(WorkerPool wp, int element,  struct timeval *arrival)
 {
-    if(wp->pending->size==0)
+    if(QueueGetSize(wp->pending)==0)
     {
         close(element);
         return QUEUE_SUCCESS;
     }
-    int fd=wp->pending->first->data;
-    queueDropHead(wp->pending); //to complete
+    //int fd=wp->pending->first->data;
+    int fd;
+    struct timeval temp;
+    QueueRemoveHead(wp->pending ,&fd ,temp); 
     close(fd);
     QueueResult res=QueueAdd(wp->pending, element, arrival);
     pthread_cond_signal(&wp->queue_empty);
@@ -41,12 +43,24 @@ QueueResult dropHeadHandler(WorkerPool wp, int element,  struct timeval *arrival
 
 QueueResult dropRandomHandler(WorkerPool wp, int element,  struct timeval *arrival)
 {
-    int half_size = wp->pending->size/2;
-    for(int i = 0 ; i < half_size; i++)
-    {
-        int fd=queueDropRandom(wp->pending);//to complete
-        close(fd);
+    if(QueueGetSize(wp->pending)==0){
+        close(element);
+        return QUEUE_SUCCESS;
     }
+    int random_index=-1;
+    int num_to_delete = ceil(0.5*QueueGetSize(wp->pending));
+    // for(int i = 0 ; i < num_to_delete; i++)
+    // {
+    //     random_index=rand()%QueueGetSize(wp->pending);
+    //     QueueDeleteByIndex(wp->pending,random_index);
+    // }
+    while (num_to_delete>0)
+    {
+        random_index=rand()%QueueGetSize(wp->pending);
+        QueueDeleteByIndex(wp->pending,random_index);
+        num_to_delete--;
+    }
+    
     QueueResult res=QueueAdd(wp->pending, element, arrival);
     pthread_cond_signal(&wp->queue_empty);
    
@@ -176,8 +190,11 @@ QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arriva
         }
         pthread_mutex_unlock(&wp->lock_queue);
         return res;
-
     }
+    res=QueueAdd(wp->pending,element,arrival);
+    pthread_cond_signal(&wp->queue_empty);
+    pthread_mutex_unlock(&wp->lock_queue);
+    return res;
 
 }
 
@@ -306,7 +323,8 @@ void QueueDeleteByIndex(Queue queue, int index)
     }
     if(index==0)
     {
-        QueueRemoveHead(queue,&to_remove);
+        struct timeval temp;
+        QueueRemoveHead(queue,&to_remove,temp);
         close(to_remove);
         return;
     }
