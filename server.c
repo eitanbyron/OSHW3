@@ -1,5 +1,6 @@
 #include "segel.h"
 #include "request.h"
+#include "queue.h"
 
 // 
 // server.c: A very, very simple web server
@@ -36,20 +37,22 @@ int main(int argc, char *argv[])
     //
     // HW3: Create some threads...
     //
+    WorkerPool work_pool=WorkerPoolCreate(numofthreads,queuesize, sched);
 
     listenfd = Open_listenfd(port);
     while (1) {
 	clientlen = sizeof(clientaddr);
 	connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
+    struct timeval curr_time;
+    gettimeofday (&curr_time,NULL);
+    WorkerPoolAddConnection(work_pool,connfd,&curr_time);
 
 	// 
 	// HW3: In general, don't handle the request in the main thread.
 	// Save the relevant info in a buffer and have one of the worker threads 
 	// do the work. 
 	// 
-	requestHandle(connfd);
 
-	Close(connfd);
     }
 
 }
