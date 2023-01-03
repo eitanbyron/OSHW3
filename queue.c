@@ -126,7 +126,7 @@ void handleWrapper (int fd,WorkerPool wp, int thread_id, struct timeval* arrival
 }
 
 
-WorkerPool PoolCreate (int number_of_threads, int queue_size, char* sched)
+WorkerPool WorkerPoolCreate (int number_of_threads, int queue_size, char* sched)
 {
     WorkerPool wp = malloc(sizeof(*wp));
     if (!initializer(wp))
