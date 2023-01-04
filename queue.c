@@ -180,7 +180,7 @@ QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arriva
     {
         return QUEUE_NULL_ARGUMENT;
     }
-    QueueResult res=NULL;
+    QueueResult res;
     pthread_mutex_lock(&wp->lock_queue);
     if(wp->running+QueueGetSize(wp->pending)==wp->max_queue_size)
     {
@@ -195,7 +195,7 @@ QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arriva
             case OVERLOAD_DROP_HEAD:
                 res= dropHeadHandler(wp, element, arrival);
             
-            case OVERLOAD_DROP_RAND: 
+            case OVERLOAD_DROP_RAND:
                 res= dropRandomHandler(wp, element, arrival);
             
             //option for a default case
@@ -215,7 +215,7 @@ void* thread_routine(pthread_args args)
 {
     while(true)
     {
-        workerPoolDequeue(args->wp, args->number_of_thread);
+        WorkerPoolDequeue(args->wp, args->number_of_thread);
     }
 }
 
@@ -226,7 +226,7 @@ Node NodeCreate(int data, struct timeval *arrival) {
     {
         return NULL;
     }
-    node->data = data;
+    node->connection_descriptor = data;
     node->arrival = *arrival;
     // node->next = next;
     // new_node->prev=NULL;
@@ -266,8 +266,6 @@ Queue QueueCreate()
     {
         return NULL;
     }
-    queue->head=0;
-    queue->tail=0;
     queue->first=NULL;
     queue->last=NULL;
     queue->size=0;
@@ -277,7 +275,7 @@ Queue QueueCreate()
 void QueueDestroy(Queue queue)
 {
     if(queue==NULL){
-        reutrn;
+        return;
     }
     if(queue->size==0){
         return;
@@ -335,8 +333,9 @@ void QueueDeleteByIndex(Queue queue, int index)
     }
     if(index==0)
     {
+        int to_remove;
         struct timeval temp;
-        QueueRemoveHead(queue,&to_remove,temp);
+        QueueRemoveHead(queue,&to_remove,&temp);
         close(to_remove);
         return;
     }

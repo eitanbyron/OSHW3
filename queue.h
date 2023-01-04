@@ -12,7 +12,7 @@ typedef struct Queue_t *Queue;
 typedef struct WorkerPool_t *WorkerPool;
 typedef struct pthread_args_t *pthread_args;
 
-typedef void(*runHandler)(int, struct timeval*, struct timeval*, int);
+typedef void(*runHandler)(int, WorkerPool, int, struct timeval*, struct timeval*);
 typedef enum QueueResult_t {
     QUEUE_SUCCESS,
     QUEUE_NULL_ARGUMENT,
