@@ -12,7 +12,7 @@ typedef struct Queue_t *Queue;
 typedef struct WorkerPool_t *WorkerPool;
 typedef struct pthread_args_t *pthread_args;
 
-typedef void(*runHandler)(int, WorkerPool, int, struct timeval*, struct timeval*);
+typedef void(*runHandler)(int, int*,int*,int*, int, struct timeval*, struct timeval*);
 typedef enum QueueResult_t {
     QUEUE_SUCCESS,
     QUEUE_NULL_ARGUMENT,
@@ -57,9 +57,6 @@ struct WorkerPool_t {
     pthread_cond_t queue_full;
     pthread_mutex_t lock_queue;
     int running;
-    int static_counter;
-    int dynamic_counter;
-    int request_counter;
     int max_queue_size;
     int numOfThreads;
     runHandler handler;
@@ -82,7 +79,7 @@ QueueResult QueueRemoveHead (Queue queue, int* fd, struct timeval* arrival);
 void QueueDeleteByIndex(Queue queue, int index);
 QueueResult WorkerPoolAddConnection(WorkerPool wp, int fd,struct timeval *arrival);
 QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arrival);
-QueueResult WorkerPoolDequeue( WorkerPool wp, int thread_num);
+QueueResult WorkerPoolDequeue( WorkerPool, int*, int*, int*, int);
 
 QueueResult blockHandler(WorkerPool wp, int element, struct timeval *arrival);
 QueueResult dropTailHandler(int element);
