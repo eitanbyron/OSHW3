@@ -132,9 +132,6 @@ WorkerPool WorkerPoolCreate (int number_of_threads, int queue_size, char* sched)
     if (!initializer(wp))
         exit(1);
     wp->running =0;
-    wp->static_counter =0;
-    wp->dynamic_counter =0;
-    wp->request_counter =0;
     wp->numOfThreads = number_of_threads;
     wp->pending = QueueCreate();
     wp->handler = handleWrapper;
@@ -213,7 +210,7 @@ QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arriva
 
 void* thread_routine(pthread_args args)
 {
-    int static_counter = 0, int dynamic_counter =0 , int request_counter = 0;
+    int static_counter = 0, dynamic_counter =0 , request_counter = 0;
     while(true)
     {
         WorkerPoolDequeue(args->wp, &request_counter, &static_counter, &dynamic_counter, args->number_of_thread);
