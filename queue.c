@@ -36,11 +36,11 @@ QueueResult dropHeadHandler(WorkerPool wp, int element,  struct timeval *arrival
     //int fd=wp->pending->first->data;
     int fd;
     struct timeval temp;
-    QueueRemoveHead(wp->pending ,&fd ,&temp); 
+    QueueRemoveHead(wp->pending ,&fd ,&temp);
     close(fd);
     QueueResult res=QueueAdd(wp->pending, element, arrival);
     pthread_cond_signal(&wp->queue_empty);
-   
+
     return res;
 }
 
@@ -63,10 +63,10 @@ QueueResult dropRandomHandler(WorkerPool wp, int element,  struct timeval *arriv
         QueueDeleteByIndex(wp->pending,random_index);
         num_to_delete--;
     }
-    
+
     QueueResult res=QueueAdd(wp->pending, element, arrival);
     pthread_cond_signal(&wp->queue_empty);
-   
+
     return res;
 }
 
@@ -108,10 +108,12 @@ void chooseHandling(WorkerPool wp, char* sched)
     else if(strcmp(sched,"dt")==0)
     {
         wp->overload_handler=OVERLOAD_DROP_TAIL;
+
     }
     else if(strcmp(sched,"dh")==0)
     {
         wp->overload_handler=OVERLOAD_DROP_HEAD;
+
     }
     else if(strcmp(sched,"random")==0)
     {
@@ -119,9 +121,9 @@ void chooseHandling(WorkerPool wp, char* sched)
     }
 }
 
-void handleWrapper (int fd,WorkerPool wp, int thread_id, struct timeval* arrival, struct timeval* dispatch)
+void handleWrapper (int fd, int* total_req, int* stat_req, int* dyn_req , int thread_id, struct timeval* arrival, struct timeval* dispatch)
 {
-    requestHandle(fd ,&(wp->request_counter),&(wp->static_counter) ,&(wp->dynamic_counter), thread_id, arrival, dispatch);
+    requestHandle(fd ,total_req,stat_req ,dyn_req, thread_id, arrival, dispatch);
     close(fd);
 }
 
@@ -132,9 +134,6 @@ WorkerPool WorkerPoolCreate (int number_of_threads, int queue_size, char* sched)
     if (!initializer(wp))
         exit(1);
     wp->running =0;
-    wp->static_counter =0;
-    wp->dynamic_counter =0;
-    wp->request_counter =0;
     wp->numOfThreads = number_of_threads;
     wp->pending = QueueCreate();
     wp->handler = handleWrapper;
@@ -149,7 +148,7 @@ WorkerPool WorkerPoolCreate (int number_of_threads, int queue_size, char* sched)
     return wp;
 }
 
-QueueResult WorkerPoolDequeue( WorkerPool wp, int thread_num)
+QueueResult WorkerPoolDequeue( WorkerPool wp, int* total_req, int* stat_req, int* dyn_req, int thread_num)
 {
     if (wp == NULL)
         return QUEUE_NULL_ARGUMENT;
@@ -158,7 +157,7 @@ QueueResult WorkerPoolDequeue( WorkerPool wp, int thread_num)
     struct timeval pick;
     struct timeval result;
     pthread_mutex_lock(&wp->lock_queue);
-    while (QueueRemoveHead(wp->pending,&fd,&arrival) == QUEUE_EMPTY)
+    while (QueueRemoveHead(wp->pending,&fd,&arrival) != QUEUE_SUCCESS)
     {
         pthread_cond_wait(&wp->queue_empty,&wp->lock_queue);
     }
@@ -166,7 +165,7 @@ QueueResult WorkerPoolDequeue( WorkerPool wp, int thread_num)
     timersub(&pick,&arrival,&result);
     wp->running++;
     pthread_mutex_unlock(&wp->lock_queue);
-    wp->handler(fd, wp, thread_num, &arrival, &result);
+    wp->handler(fd, total_req, stat_req, dyn_req, thread_num, &arrival, &result);
     pthread_mutex_lock(&wp->lock_queue);
     wp->running--;
     pthread_cond_broadcast(&wp->queue_full);
@@ -176,7 +175,7 @@ QueueResult WorkerPoolDequeue( WorkerPool wp, int thread_num)
 
 
 QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arrival){
-        if(wp==NULL)
+    if(wp==NULL)
     {
         return QUEUE_NULL_ARGUMENT;
     }
@@ -188,17 +187,17 @@ QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arriva
         {
             case OVERLOAD_BLOCK:
                 res= blockHandler(wp, element, arrival);
-            
+
             case OVERLOAD_DROP_TAIL:
                 res= dropTailHandler(element);
-            
+
             case OVERLOAD_DROP_HEAD:
                 res= dropHeadHandler(wp, element, arrival);
-            
+
             case OVERLOAD_DROP_RAND:
                 res= dropRandomHandler(wp, element, arrival);
-            
-            //option for a default case
+
+                //option for a default case
         }
         pthread_mutex_unlock(&wp->lock_queue);
         return res;
@@ -213,9 +212,10 @@ QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arriva
 
 void* thread_routine(pthread_args args)
 {
+    int static_counter = 0, dynamic_counter =0 , request_counter = 0;
     while(true)
     {
-        WorkerPoolDequeue(args->wp, args->number_of_thread);
+        WorkerPoolDequeue(args->wp, &request_counter, &static_counter, &dynamic_counter, args->number_of_thread);
     }
 }
 
@@ -339,7 +339,7 @@ void QueueDeleteByIndex(Queue queue, int index)
         close(to_remove);
         return;
     }
-    
+
     Node to_remove=getNodeByIndex(queue,index);
     if(to_remove==NULL)return;
 
