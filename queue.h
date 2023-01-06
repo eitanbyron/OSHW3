@@ -57,9 +57,6 @@ struct WorkerPool_t {
     pthread_cond_t queue_full;
     pthread_mutex_t lock_queue;
     int running;
-    int static_counter;
-    int dynamic_counter;
-    int request_counter;
     int max_queue_size;
     int numOfThreads;
     runHandler handler;
