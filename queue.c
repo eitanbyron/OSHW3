@@ -36,11 +36,11 @@ QueueResult dropHeadHandler(WorkerPool wp, int element,  struct timeval *arrival
     //int fd=wp->pending->first->data;
     int fd;
     struct timeval temp;
-    QueueRemoveHead(wp->pending ,&fd ,&temp); 
+    QueueRemoveHead(wp->pending ,&fd ,&temp);
     close(fd);
     QueueResult res=QueueAdd(wp->pending, element, arrival);
     pthread_cond_signal(&wp->queue_empty);
-   
+
     return res;
 }
 
@@ -63,10 +63,10 @@ QueueResult dropRandomHandler(WorkerPool wp, int element,  struct timeval *arriv
         QueueDeleteByIndex(wp->pending,random_index);
         num_to_delete--;
     }
-    
+
     QueueResult res=QueueAdd(wp->pending, element, arrival);
     pthread_cond_signal(&wp->queue_empty);
-   
+
     return res;
 }
 
@@ -108,10 +108,12 @@ void chooseHandling(WorkerPool wp, char* sched)
     else if(strcmp(sched,"dt")==0)
     {
         wp->overload_handler=OVERLOAD_DROP_TAIL;
+
     }
     else if(strcmp(sched,"dh")==0)
     {
         wp->overload_handler=OVERLOAD_DROP_HEAD;
+
     }
     else if(strcmp(sched,"random")==0)
     {
@@ -155,7 +157,7 @@ QueueResult WorkerPoolDequeue( WorkerPool wp, int* total_req, int* stat_req, int
     struct timeval pick;
     struct timeval result;
     pthread_mutex_lock(&wp->lock_queue);
-    while (QueueRemoveHead(wp->pending,&fd,&arrival) == QUEUE_EMPTY)
+    while (QueueRemoveHead(wp->pending,&fd,&arrival) != QUEUE_SUCCESS)
     {
         pthread_cond_wait(&wp->queue_empty,&wp->lock_queue);
     }
@@ -173,7 +175,7 @@ QueueResult WorkerPoolDequeue( WorkerPool wp, int* total_req, int* stat_req, int
 
 
 QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arrival){
-        if(wp==NULL)
+    if(wp==NULL)
     {
         return QUEUE_NULL_ARGUMENT;
     }
@@ -185,17 +187,17 @@ QueueResult WorkerPoolEnqueue(WorkerPool wp, int element, struct timeval *arriva
         {
             case OVERLOAD_BLOCK:
                 res= blockHandler(wp, element, arrival);
-            
+
             case OVERLOAD_DROP_TAIL:
                 res= dropTailHandler(element);
-            
+
             case OVERLOAD_DROP_HEAD:
                 res= dropHeadHandler(wp, element, arrival);
-            
+
             case OVERLOAD_DROP_RAND:
                 res= dropRandomHandler(wp, element, arrival);
-            
-            //option for a default case
+
+                //option for a default case
         }
         pthread_mutex_unlock(&wp->lock_queue);
         return res;
@@ -337,7 +339,7 @@ void QueueDeleteByIndex(Queue queue, int index)
         close(to_remove);
         return;
     }
-    
+
     Node to_remove=getNodeByIndex(queue,index);
     if(to_remove==NULL)return;
 
